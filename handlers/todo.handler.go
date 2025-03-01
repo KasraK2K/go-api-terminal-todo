@@ -3,15 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	database "todo/db"
 	"todo/internal/repository"
 	"todo/models"
 )
-
-//UpdateTodo
-//DeleteTodo
 
 func GetTodo(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -79,6 +77,57 @@ func CreateTodo(w http.ResponseWriter, r *http.Request) {
 
 	sanitiseTodo := sanitiseResponse(todo)
 	SendJSONResponse(w, http.StatusOK, sanitiseTodo, nil)
+}
+
+func UpdateTodo(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req repository.UpdateTodoParams
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		log.Printf("Invalid JSON format: %v", err)
+		SendJSONResponse(w, http.StatusBadRequest, nil, nil)
+		return
+	}
+
+	todo, err := database.Database.Queries.UpdateTodo(ctx, req)
+	if err != nil {
+		log.Printf("Error creating todo: %v", err)
+		SendJSONResponse(w, http.StatusNotFound, nil, err)
+		return
+	}
+
+	sanitiseTodo := sanitiseResponse(todo)
+	SendJSONResponse(w, http.StatusOK, sanitiseTodo, nil)
+}
+
+func DeleteTodo(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var req models.FindArgs
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		log.Printf("Invalid JSON format: %v", err)
+		SendJSONResponse(w, http.StatusBadRequest, nil, nil)
+		return
+	}
+
+	if req.ID <= 0 {
+		err = errors.New("invalid or missing ID")
+		log.Printf("Invalid or missing ID: %v", req.ID)
+		SendJSONResponse(w, http.StatusBadRequest, nil, nil)
+		return
+	}
+
+	err = database.Database.Queries.DeleteTodo(ctx, int64(req.ID))
+	if err != nil {
+		log.Printf("Error fetching todo with ID %d: %v", req.ID, err)
+		SendJSONResponse(w, http.StatusNotFound, nil, err)
+		return
+	}
+
+	message := fmt.Sprintf("Todo with id %d successfully deleted", req.ID)
+	SendJSONResponse(w, http.StatusOK, message, nil)
 }
 
 /* -------------------------------------------------------------------------------------------------- */

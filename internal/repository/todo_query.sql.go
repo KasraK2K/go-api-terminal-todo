@@ -11,7 +11,8 @@ import (
 
 const createTodo = `-- name: CreateTodo :one
 INSERT INTO todos (title, description)
-VALUES (?, ?) RETURNING id, title, description, completed
+VALUES (?, ?)
+RETURNING id, title, description, completed
 `
 
 type CreateTodoParams struct {
@@ -45,7 +46,8 @@ func (q *Queries) DeleteTodo(ctx context.Context, id int64) error {
 const getTodo = `-- name: GetTodo :one
 SELECT id, title, description, completed
 FROM todos
-WHERE id = ? LIMIT 1
+WHERE id = ?
+LIMIT 1
 `
 
 func (q *Queries) GetTodo(ctx context.Context, id int64) (Todo, error) {
@@ -93,20 +95,35 @@ func (q *Queries) ListTodos(ctx context.Context) ([]Todo, error) {
 	return items, nil
 }
 
-const updateTodo = `-- name: UpdateTodo :exec
+const updateTodo = `-- name: UpdateTodo :one
 UPDATE todos
 SET title       = ?,
-    description = ?
-WHERE id = ? RETURNING id, title, description, completed
+    description = ?,
+    completed   = ?
+WHERE id = ?
+RETURNING id, title, description, completed
 `
 
 type UpdateTodoParams struct {
 	Title       string
 	Description string
+	Completed   bool
 	ID          int64
 }
 
-func (q *Queries) UpdateTodo(ctx context.Context, arg UpdateTodoParams) error {
-	_, err := q.db.ExecContext(ctx, updateTodo, arg.Title, arg.Description, arg.ID)
-	return err
+func (q *Queries) UpdateTodo(ctx context.Context, arg UpdateTodoParams) (Todo, error) {
+	row := q.db.QueryRowContext(ctx, updateTodo,
+		arg.Title,
+		arg.Description,
+		arg.Completed,
+		arg.ID,
+	)
+	var i Todo
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Description,
+		&i.Completed,
+	)
+	return i, err
 }

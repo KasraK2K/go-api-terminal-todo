@@ -1,7 +1,8 @@
 -- name: GetTodo :one
 SELECT *
 FROM todos
-WHERE id = ? LIMIT 1;
+WHERE id = ?
+LIMIT 1;
 
 -- name: ListTodos :many
 SELECT *
@@ -9,13 +10,16 @@ FROM todos;
 
 -- name: CreateTodo :one
 INSERT INTO todos (title, description)
-VALUES (?, ?) RETURNING *;
+VALUES (?, ?)
+RETURNING *;
 
--- name: UpdateTodo :exec
+-- name: UpdateTodo :one
 UPDATE todos
 SET title       = ?,
-    description = ?
-WHERE id = ? RETURNING *;
+    description = ?,
+    completed   = ?
+WHERE id = ?
+RETURNING *;
 
 -- name: DeleteTodo :exec
 DELETE
