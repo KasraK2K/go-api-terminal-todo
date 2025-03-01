@@ -35,8 +35,8 @@ func newDatabase(dbFile string) (*models.Database, error) {
 
 func InitDatabase() {
 	var err error
-	//Database, err = newDatabase("./db/database.db")
-	Database, err = newDatabase(":memory:")
+	Database, err = newDatabase("./db/database.db")
+	//Database, err = newDatabase(":memory:")
 	if err != nil {
 		log.Fatal("Database connection failed:", err)
 	}
