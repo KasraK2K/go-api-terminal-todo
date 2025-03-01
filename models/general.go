@@ -8,12 +8,16 @@ import (
 type StatusCode int
 
 type Response struct {
-	Status int
-	Error  *string
-	Data   interface{}
+	Status int         `json:"status"`
+	Error  *string     `json:"error"`
+	Data   interface{} `json:"data"`
 }
 
 type Database struct {
 	DB      *sql.DB
 	Queries *repository.Queries
+}
+
+type FindArgs struct {
+	ID int `json:"id"`
 }

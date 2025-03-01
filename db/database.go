@@ -10,7 +10,7 @@ import (
 	"todo/models"
 )
 
-//go:embed schemas/todo_schema.sql
+//go:embed schemas/*.sql
 var ddl string
 var Database *models.Database
 
@@ -35,7 +35,8 @@ func newDatabase(dbFile string) (*models.Database, error) {
 
 func InitDatabase() {
 	var err error
-	Database, err = newDatabase("./db/database.db")
+	//Database, err = newDatabase("./db/database.db")
+	Database, err = newDatabase(":memory:")
 	if err != nil {
 		log.Fatal("Database connection failed:", err)
 	}
