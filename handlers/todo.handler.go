@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -12,141 +11,90 @@ import (
 )
 
 func GetTodo(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	var req models.FindArgs
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		log.Printf("Invalid JSON format: %v", err)
-		SendJSONResponse(w, http.StatusBadRequest, nil, nil)
+	if err := decodeJSONBody(w, r, &req); err != nil {
 		return
 	}
 
 	if req.ID <= 0 {
-		err = errors.New("invalid or missing ID")
-		log.Printf("Invalid or missing ID: %v", req.ID)
-		SendJSONResponse(w, http.StatusBadRequest, nil, nil)
+		log.Printf("Invalid ID: %v", req.ID)
+		SendJSONResponse(w, http.StatusBadRequest, nil, errors.New("invalid or missing ID"))
 		return
 	}
 
-	todo, err := database.Database.Queries.GetTodo(ctx, int64(req.ID))
-	if err != nil {
-		log.Printf("Error fetching todo with ID %d: %v", req.ID, err)
-		SendJSONResponse(w, http.StatusNotFound, nil, err)
-		return
-	}
-
-	sanitiseTodo := sanitiseResponse(todo)
-	SendJSONResponse(w, http.StatusOK, sanitiseTodo, nil)
+	executeQuery(w, func() (models.TodoResponse, error) {
+		todo, err := database.Database.Queries.GetTodo(r.Context(), int64(req.ID))
+		return sanitiseTodo(todo), err
+	})
 }
 
 func ListTodos(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	todos, err := database.Database.Queries.ListTodos(ctx)
-	if err != nil {
-		log.Printf("Error fetching todos: %v", err)
-		SendJSONResponse(w, http.StatusInternalServerError, nil, err)
-		return
-	}
-
-	if todos == nil {
-		todos = []repository.Todo{}
-	}
-
-	sanitisedTodo := sanitiseListResponse(todos)
-	SendJSONResponse(w, http.StatusOK, sanitisedTodo, nil)
+	executeQuery(w, func() ([]models.TodoResponse, error) {
+		todos, err := database.Database.Queries.ListTodos(r.Context())
+		if err != nil {
+			return nil, err
+		}
+		return sanitiseTodos(todos), nil
+	})
 }
 
 func CreateTodo(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	var req repository.CreateTodoParams
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		log.Printf("Invalid JSON format: %v", err)
-		SendJSONResponse(w, http.StatusBadRequest, nil, nil)
+	if err := decodeJSONBody(w, r, &req); err != nil {
 		return
 	}
 
-	todo, err := database.Database.Queries.CreateTodo(ctx, req)
-	if err != nil {
-		log.Printf("Error creating todo: %v", err)
-		SendJSONResponse(w, http.StatusNotFound, nil, err)
-		return
-	}
-
-	sanitiseTodo := sanitiseResponse(todo)
-	SendJSONResponse(w, http.StatusOK, sanitiseTodo, nil)
+	executeQuery(w, func() (models.TodoResponse, error) {
+		todo, err := database.Database.Queries.CreateTodo(r.Context(), req)
+		return sanitiseTodo(todo), err
+	})
 }
 
 func UpdateTodo(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	var req repository.UpdateTodoParams
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		log.Printf("Invalid JSON format: %v", err)
-		SendJSONResponse(w, http.StatusBadRequest, nil, nil)
+	if err := decodeJSONBody(w, r, &req); err != nil {
 		return
 	}
 
-	todo, err := database.Database.Queries.UpdateTodo(ctx, req)
-	if err != nil {
-		log.Printf("Error creating todo: %v", err)
-		SendJSONResponse(w, http.StatusNotFound, nil, err)
-		return
-	}
-
-	sanitiseTodo := sanitiseResponse(todo)
-	SendJSONResponse(w, http.StatusOK, sanitiseTodo, nil)
+	executeQuery(w, func() (models.TodoResponse, error) {
+		todo, err := database.Database.Queries.UpdateTodo(r.Context(), req)
+		return sanitiseTodo(todo), err
+	})
 }
 
 func DeleteTodo(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	var req models.FindArgs
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		log.Printf("Invalid JSON format: %v", err)
-		SendJSONResponse(w, http.StatusBadRequest, nil, nil)
+	if err := decodeJSONBody(w, r, &req); err != nil {
 		return
 	}
 
 	if req.ID <= 0 {
-		err = errors.New("invalid or missing ID")
-		log.Printf("Invalid or missing ID: %v", req.ID)
-		SendJSONResponse(w, http.StatusBadRequest, nil, nil)
+		log.Printf("Invalid ID: %v", req.ID)
+		SendJSONResponse(w, http.StatusBadRequest, nil, errors.New("invalid or missing ID"))
 		return
 	}
 
-	err = database.Database.Queries.DeleteTodo(ctx, int64(req.ID))
-	if err != nil {
-		log.Printf("Error fetching todo with ID %d: %v", req.ID, err)
-		SendJSONResponse(w, http.StatusNotFound, nil, err)
-		return
-	}
-
-	message := fmt.Sprintf("Todo with id %d successfully deleted", req.ID)
-	SendJSONResponse(w, http.StatusOK, message, nil)
+	executeQuery(w, func() (string, error) {
+		err := database.Database.Queries.DeleteTodo(r.Context(), int64(req.ID))
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("Todo with id %d successfully deleted", req.ID), nil
+	})
 }
 
 /* -------------------------------------------------------------------------------------------------- */
 /*                                      Private Useful Functions                                      */
 /* -------------------------------------------------------------------------------------------------- */
-func sanitiseListResponse(todos []repository.Todo) []models.TodoResponse {
-	responseTodos := make([]models.TodoResponse, len(todos))
+func sanitiseTodos(todos []repository.Todo) []models.TodoResponse {
+	response := make([]models.TodoResponse, len(todos))
 	for i, todo := range todos {
-		responseTodos[i] = models.TodoResponse{
-			ID:          todo.ID,
-			Title:       todo.Title,
-			Description: todo.Description,
-			Completed:   todo.Completed,
-		}
+		response[i] = sanitiseTodo(todo)
 	}
-	return responseTodos
+	return response
 }
 
-func sanitiseResponse(todo repository.Todo) models.TodoResponse {
+func sanitiseTodo(todo repository.Todo) models.TodoResponse {
 	return models.TodoResponse{
 		ID:          todo.ID,
 		Title:       todo.Title,
