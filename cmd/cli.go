@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/olekukonko/tablewriter"
 	"log"
 	"os"
 	database "todo/db"
@@ -148,14 +149,36 @@ func deleteTodo(id int) {
 
 // Function to display todos in a table format
 func printTable(todos []models.TodoResponse) {
-	fmt.Println("\nTodos:")
-	fmt.Println("--------------------------------------------------")
-	fmt.Printf("| %-3s | %-20s | %-20s |\n", "ID", "Title", "Description")
-	fmt.Println("--------------------------------------------------")
-	for _, todo := range todos {
-		fmt.Printf("| %-3d | %-20s | %-20s |\n", todo.ID, todo.Title, todo.Description)
+	if len(todos) == 0 {
+		fmt.Println("No todos found.")
+		return
 	}
-	fmt.Println("--------------------------------------------------")
+
+	// Create a new table writer
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"ID", "Title", "Description", "Completed"})
+
+	// Populate table rows
+	for _, todo := range todos {
+		completedText := "No"
+		if todo.Completed {
+			completedText = "Yes"
+		}
+
+		row := []string{
+			fmt.Sprintf("%d", todo.ID),
+			todo.Title,
+			todo.Description,
+			completedText,
+		}
+		table.Append(row)
+	}
+
+	// Customize the table style
+	table.SetBorder(true)
+	table.SetRowLine(false)
+	table.SetAutoWrapText(true)
+	table.Render() // Render the table
 }
 
 // Function to sanitize database todo to response format
