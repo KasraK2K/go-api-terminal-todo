@@ -56,6 +56,20 @@ func UpdateTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	existingTodo, err := database.Database.Queries.GetTodo(r.Context(), req.ID)
+	if err != nil {
+		log.Printf("Error fetching existing todo: %v", err)
+		SendJSONResponse(w, http.StatusNotFound, nil, err)
+		return
+	}
+
+	if req.Title == "" {
+		req.Title = existingTodo.Title
+	}
+	if req.Description == "" {
+		req.Description = existingTodo.Description
+	}
+
 	executeQuery(w, func() (models.TodoResponse, error) {
 		todo, err := database.Database.Queries.UpdateTodo(r.Context(), req)
 		return sanitiseTodo(todo), err
