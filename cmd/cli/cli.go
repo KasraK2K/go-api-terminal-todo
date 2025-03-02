@@ -213,7 +213,7 @@ func printTable(todos []models.TodoResponse) {
 
 	// Customize the table style
 	table.SetBorder(true)
-	table.SetRowLine(false)
+	table.SetRowLine(true)
 	table.SetAutoWrapText(true)
 	table.Render() // Render the table
 }
