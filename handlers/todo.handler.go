@@ -22,20 +22,14 @@ func GetTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	executeQuery(w, func() (models.TodoResponse, error) {
-		todo, err := database.Database.Queries.GetTodo(r.Context(), int64(req.ID))
-		return sanitiseTodo(todo), err
-	})
+	todo, err := database.Database.Queries.GetTodo(r.Context(), int64(req.ID))
+	handleResponse[repository.Todo](w, todo, err)
 }
 
 func ListTodos(w http.ResponseWriter, r *http.Request) {
-	executeQuery(w, func() ([]models.TodoResponse, error) {
-		todos, err := database.Database.Queries.ListTodos(r.Context())
-		if err != nil {
-			return nil, err
-		}
-		return sanitiseTodos(todos), nil
-	})
+	todos, err := database.Database.Queries.ListTodos(r.Context())
+	handleResponse[[]repository.Todo](w, todos, err)
+
 }
 
 func CreateTodo(w http.ResponseWriter, r *http.Request) {
@@ -44,10 +38,8 @@ func CreateTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	executeQuery(w, func() (models.TodoResponse, error) {
-		todo, err := database.Database.Queries.CreateTodo(r.Context(), req)
-		return sanitiseTodo(todo), err
-	})
+	todo, err := database.Database.Queries.CreateTodo(r.Context(), req)
+	handleResponse[repository.Todo](w, todo, err)
 }
 
 func UpdateTodo(w http.ResponseWriter, r *http.Request) {
@@ -70,10 +62,8 @@ func UpdateTodo(w http.ResponseWriter, r *http.Request) {
 		req.Description = existingTodo.Description
 	}
 
-	executeQuery(w, func() (models.TodoResponse, error) {
-		todo, err := database.Database.Queries.UpdateTodo(r.Context(), req)
-		return sanitiseTodo(todo), err
-	})
+	todo, err := database.Database.Queries.UpdateTodo(r.Context(), req)
+	handleResponse[repository.Todo](w, todo, err)
 }
 
 func DeleteTodo(w http.ResponseWriter, r *http.Request) {
@@ -88,31 +78,13 @@ func DeleteTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	executeQuery(w, func() (string, error) {
-		err := database.Database.Queries.DeleteTodo(r.Context(), int64(req.ID))
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("Todo with id %d successfully deleted", req.ID), nil
-	})
-}
-
-/* -------------------------------------------------------------------------------------------------- */
-/*                                      Private Useful Functions                                      */
-/* -------------------------------------------------------------------------------------------------- */
-func sanitiseTodos(todos []repository.Todo) []models.TodoResponse {
-	response := make([]models.TodoResponse, len(todos))
-	for i, todo := range todos {
-		response[i] = sanitiseTodo(todo)
+	_, err := database.Database.Queries.GetTodo(r.Context(), int64(req.ID))
+	if err != nil {
+		SendJSONResponse(w, http.StatusNotFound, nil, err)
+		return
 	}
-	return response
-}
 
-func sanitiseTodo(todo repository.Todo) models.TodoResponse {
-	return models.TodoResponse{
-		ID:          todo.ID,
-		Title:       todo.Title,
-		Description: todo.Description,
-		Completed:   todo.Completed,
-	}
+	err = database.Database.Queries.DeleteTodo(r.Context(), int64(req.ID))
+	message := fmt.Sprintf("Todo with id %d successfully deleted", req.ID)
+	handleResponse[string](w, message, err)
 }

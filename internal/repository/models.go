@@ -5,8 +5,8 @@
 package repository
 
 type Todo struct {
-	ID          int64
-	Title       string
-	Description string
-	Completed   bool
+	ID          int64  `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Completed   bool   `json:"completed"`
 }

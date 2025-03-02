@@ -16,8 +16,8 @@ RETURNING id, title, description, completed
 `
 
 type CreateTodoParams struct {
-	Title       string
-	Description string
+	Title       string `json:"title"`
+	Description string `json:"description"`
 }
 
 func (q *Queries) CreateTodo(ctx context.Context, arg CreateTodoParams) (Todo, error) {
@@ -105,10 +105,10 @@ RETURNING id, title, description, completed
 `
 
 type UpdateTodoParams struct {
-	Title       string
-	Description string
-	Completed   bool
-	ID          int64
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Completed   bool   `json:"completed"`
+	ID          int64  `json:"id"`
 }
 
 func (q *Queries) UpdateTodo(ctx context.Context, arg UpdateTodoParams) (Todo, error) {

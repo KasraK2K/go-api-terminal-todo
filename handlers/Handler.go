@@ -9,7 +9,6 @@ import (
 )
 
 func SendJSONResponse(w http.ResponseWriter, statusCode int, data interface{}, err error) {
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
@@ -31,6 +30,16 @@ func SendJSONResponse(w http.ResponseWriter, statusCode int, data interface{}, e
 	}
 }
 
+func handleResponse[T any](w http.ResponseWriter, data T, err error) {
+	if err != nil {
+		log.Printf("Database error: %v", err)
+		SendJSONResponse(w, http.StatusNotFound, nil, err)
+		return
+	}
+
+	SendJSONResponse(w, http.StatusOK, data, nil)
+}
+
 func decodeJSONBody[T any](w http.ResponseWriter, r *http.Request, reference *T) error {
 	err := json.NewDecoder(r.Body).Decode(reference)
 	if err != nil {
@@ -39,15 +48,4 @@ func decodeJSONBody[T any](w http.ResponseWriter, r *http.Request, reference *T)
 		return err
 	}
 	return nil
-}
-
-func executeQuery[T any](w http.ResponseWriter, queryFunc func() (T, error)) {
-	result, err := queryFunc()
-	if err != nil {
-		log.Printf("Database error: %v", err)
-		SendJSONResponse(w, http.StatusNotFound, nil, err)
-		return
-	}
-
-	SendJSONResponse(w, http.StatusOK, result, nil)
 }
