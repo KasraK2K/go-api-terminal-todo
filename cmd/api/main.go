@@ -1,10 +1,9 @@
 package main
 
 import (
-	database "todo/db"
+	_ "todo/db"
 )
 
 func main() {
-	database.InitDatabase()
 	bootstrap()
 }

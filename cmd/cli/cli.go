@@ -4,12 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/olekukonko/tablewriter"
 	"log"
 	"os"
 	database "todo/db"
 	"todo/internal/repository"
-	"todo/models"
+
+	"github.com/olekukonko/tablewriter"
 )
 
 func main() {
@@ -104,7 +104,7 @@ func getTodo(id int) {
 	if err != nil {
 		log.Fatalf("Error fetching todo: %v", err)
 	}
-	printTable([]models.TodoResponse{sanitiseTodo(todo)})
+	printTable([]repository.Todo{sanitiseTodo(todo)})
 }
 
 // Function to CREATE a todo directly in SQLite
@@ -119,7 +119,7 @@ func createTodo(title, description string) {
 		log.Fatalf("Error creating todo: %v", err)
 	}
 	fmt.Println("Todo Created Successfully!")
-	printTable([]models.TodoResponse{sanitiseTodo(todo)})
+	printTable([]repository.Todo{sanitiseTodo(todo)})
 }
 
 // Function to UPDATE a todo directly in SQLite
@@ -161,7 +161,7 @@ func updateTodo(id int, title, description string, completedStr string) {
 	}
 
 	fmt.Println("Todo Updated Successfully!")
-	printTable([]models.TodoResponse{sanitiseTodo(todo)})
+	printTable([]repository.Todo{sanitiseTodo(todo)})
 }
 
 // Function to LIST all todos directly from SQLite
@@ -185,7 +185,7 @@ func deleteTodo(id int) {
 }
 
 // Function to display todos in a table format
-func printTable(todos []models.TodoResponse) {
+func printTable(todos []repository.Todo) {
 	if len(todos) == 0 {
 		fmt.Println("No todos found.")
 		return
@@ -219,8 +219,8 @@ func printTable(todos []models.TodoResponse) {
 }
 
 // Function to sanitize database todo to response format
-func sanitiseTodo(todo repository.Todo) models.TodoResponse {
-	return models.TodoResponse{
+func sanitiseTodo(todo repository.Todo) repository.Todo {
+	return repository.Todo{
 		ID:          todo.ID,
 		Title:       todo.Title,
 		Description: todo.Description,
@@ -228,8 +228,8 @@ func sanitiseTodo(todo repository.Todo) models.TodoResponse {
 	}
 }
 
-func sanitiseTodos(todos []repository.Todo) []models.TodoResponse {
-	response := make([]models.TodoResponse, len(todos))
+func sanitiseTodos(todos []repository.Todo) []repository.Todo {
+	response := make([]repository.Todo, len(todos))
 	for i, todo := range todos {
 		response[i] = sanitiseTodo(todo)
 	}

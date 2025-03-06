@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	_ "embed"
 	"log"
-	_ "modernc.org/sqlite"
 	"todo/internal/repository"
 	"todo/models"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 //go:embed schemas/*.sql
@@ -17,7 +18,7 @@ var Database *models.Database
 func newDatabase(dbFile string) (*models.Database, error) {
 	ctx := context.Background()
 
-	db, err := sql.Open("sqlite", dbFile)
+	db, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +34,7 @@ func newDatabase(dbFile string) (*models.Database, error) {
 	}, nil
 }
 
-func InitDatabase() {
+func init() {
 	var err error
 	Database, err = newDatabase("./db/database.db")
 	if err != nil {
